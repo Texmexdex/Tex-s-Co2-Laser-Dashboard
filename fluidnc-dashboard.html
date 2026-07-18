@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#06080c">
+<title>FluidNC Pendant</title>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#07070c;
+  --bg2:#0a0a12;
+  --panel:#0c0d16;
+  --panel2:#0f1119;
+  --line:#1c1e30;
+  --line2:#272a42;
+  --ink:#e0dfe8;
+  --ink-dim:#6b6b82;
+  --ink-faint:#3c3e56;
+  --neon:#b44dff;
+  --neon-dim:rgba(180,77,255,.14);
+  --neon-deep:#7a1ad9;
+  --blue:#57b8ff;
+  --blue-dim:rgba(87,184,255,.13);
+  --red:#ff5a5a;
+  --red-dim:rgba(255,90,90,.12);
+  --radius:14px;
+  --touch:64px;            /* minimum touch target */
+  --serif:"Palatino Linotype","Book Antiqua",Georgia,serif;
+  --mono:"Cascadia Code","JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--mono);
+  overflow:hidden;
+  -webkit-user-select:none;user-select:none;
+  touch-action:manipulation;
+}
+
+/* ============ CO2 TUBE BACKGROUND ============ */
+#tube-bg{
+  position:fixed;inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:#07070c;
+}
+#tube-bg::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg, rgba(4,5,7,.55) 0%, rgba(4,5,7,.20) 40%, rgba(4,5,7,.72) 100%);
+}
+#tube-bg::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 42%, transparent 26%, rgba(3,4,6,.72) 100%);
+  animation:tubeGlow 5s ease-in-out infinite;
+}
+@keyframes tubeGlow{
+  0%,100%{ box-shadow:inset 0 0 120px rgba(180,77,255,0); }
+  50%{ box-shadow:inset 0 0 160px rgba(180,77,255,.10); }
+}
+
+/* ============ ANIMATED FX LAYER (above photo, below UI) ============ */
+#fx-bg{
+  position:fixed;inset:0;
+  z-index:1;
+  pointer-events:none;
+}
+
+/* ============ APP FRAME ============ */
+#app{
+  position:relative;z-index:2;
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  gap:10px;
+  padding:12px clamp(12px,2vw,22px);
+  max-width:1240px;
+  margin:0 auto;
+}
+
+/* ============ HEADER ============ */
+header{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 18px;
+  background:linear-gradient(180deg, rgba(13,16,26,.48), rgba(9,11,18,.48));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  backdrop-filter:blur(10px);
+}
+/* ============ TITLE SCENE (beam -> text, tube at right) ============ */
+.title-scene{
+  position:relative;
+  display:flex;align-items:center;
+  flex:1 1 auto;
+  min-width:0;
+  padding:4px 0;
+}
+.beam-line{
+  width:clamp(14px, 3vw, 34px);
+  height:3px;
+  flex-shrink:0;
+  background:linear-gradient(90deg, transparent, #b44dff 40%, #eed9ff);
+  box-shadow:0 0 8px #b44dff, 0 0 20px rgba(180,77,255,.6), 0 0 42px rgba(122,26,217,.4);
+  animation:beamPulse 1.8s ease-in-out infinite;
+}
+.beam-dot{
+  width:6px;height:6px;border-radius:50%;
+  flex-shrink:0;margin:0 4px 0 -2px;
+  background:#f4ebff;
+  box-shadow:0 0 6px #c98aff, 0 0 14px #b44dff, 0 0 28px #9d2bff;
+  animation:beamPulse 1.8s ease-in-out infinite;
+}
+@keyframes beamPulse{
+  0%,100%{ opacity:1; }
+  50%{ opacity:.55; }
+}
+.beam-tail{
+  flex:1 1 auto;
+  height:2px;
+  margin-left:clamp(10px, 2vw, 22px);
+  min-width:20px;
+  background:linear-gradient(90deg, #eed9ff, #b44dff 25%, rgba(180,77,255,.55) 70%, rgba(180,77,255,.30));
+  box-shadow:0 0 6px rgba(180,77,255,.8), 0 0 16px rgba(180,77,255,.45), 0 0 34px rgba(122,26,217,.25);
+  animation:beamPulse 1.8s ease-in-out infinite;
+}
+.neon{
+  font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;
+  font-weight:700;
+  font-size:clamp(30px, 4.6vw, 52px);
+  letter-spacing:.04em;
+  white-space:nowrap;
+  display:flex;
+}
+.neon .nl{
+  position:relative;
+  display:inline-block;
+  color:#eed9ff;
+  font-style:italic;
+  transform:skewX(-6deg);
+  text-shadow:
+    0 0 4px #c98aff,
+    0 0 12px #b44dff,
+    0 0 26px #9d2bff,
+    0 0 48px #7a1ad9,
+    0 0 80px rgba(122,26,217,.55);
+  animation:neonBuzz 3.6s ease-in-out infinite;
+}
+.neon .nl:nth-child(odd){ color:#f4ebff; }
+.neon .nl.flicker{ animation:nlFlicker 2.8s steps(1,end) infinite; }
+.neon .nl.flicker2{ animation:nlFlicker2 3.4s steps(1,end) infinite; }
+.neon .nl.flicker3{ animation:nlFlicker3 4.2s steps(1,end) infinite; }
+.neon .nl.dead{
+  color:#3a1f52;
+  text-shadow:0 0 2px rgba(88,40,140,.4);
+  animation:none;
+}
+@keyframes neonBuzz{
+  0%,100%{ opacity:1; }
+  92%{ opacity:1; }
+  93%{ opacity:.86; }
+  94%{ opacity:1; }
+  96%{ opacity:.92; }
+  97%{ opacity:1; }
+}
+@keyframes nlFlicker{
+  0%,100%{ opacity:1; }
+  38%{ opacity:1; } 39%{ opacity:.25; } 40%{ opacity:1; }
+  41%{ opacity:.5; } 42%{ opacity:1; }
+  77%{ opacity:1; } 78%{ opacity:.35; } 79%{ opacity:1; }
+}
+@keyframes nlFlicker2{
+  0%,100%{ opacity:1; }
+  22%{ opacity:1; } 23%{ opacity:.3; } 24%{ opacity:1; }
+  61%{ opacity:1; } 62%{ opacity:.15; } 63%{ opacity:.9; } 64%{ opacity:1; }
+}
+@keyframes nlFlicker3{
+  0%,100%{ opacity:1; }
+  50%{ opacity:1; } 51%{ opacity:.2; } 52%{ opacity:1; }
+  53%{ opacity:.45; } 54%{ opacity:1; }
+  88%{ opacity:1; } 89%{ opacity:.3; } 90%{ opacity:1; }
+}
+
+.conn{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.state-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 14px;
+  border-radius:99px;
+  border:1px solid var(--line2);
+  background:var(--panel);
+  font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  min-width:128px;justify-content:center;
+  transition:border-color .3s, color .3s, box-shadow .3s;
+}
+.state-pill .dot{width:9px;height:9px;border-radius:50%;background:var(--ink-faint);transition:background .3s, box-shadow .3s}
+.state-pill.idle   {color:var(--neon);border-color:rgba(180,77,255,.35)}
+.state-pill.idle .dot{background:var(--neon);box-shadow:0 0 8px var(--neon)}
+.state-pill.run    {color:var(--blue);border-color:rgba(87,184,255,.4)}
+.state-pill.run .dot{background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse 1s infinite}
+.state-pill.hold   {color:var(--blue);border-color:rgba(87,184,255,.4)}
+.state-pill.hold .dot{background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse .7s infinite}
+.state-pill.alarm  {color:var(--red);border-color:rgba(255,90,90,.45)}
+.state-pill.alarm .dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse .45s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+.host-wrap{display:flex;gap:8px;align-items:center}
+#host{
+  width:150px;height:44px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--ink);
+  font-family:var(--mono);font-size:13px;
+  padding:0 12px;
+  outline:none;
+  transition:border-color .2s;
+}
+#host:focus{border-color:rgba(180,77,255,.5)}
+#host::placeholder{color:var(--ink-faint)}
+
+/* ============ BUTTONS (shared) ============ */
+button{
+  font-family:var(--mono);
+  color:var(--ink);
+  background:var(--panel);
+  border:1px solid var(--line2);
+  border-radius:12px;
+  cursor:pointer;
+  min-height:var(--touch);
+  font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .06s, background .15s, border-color .15s, box-shadow .15s, color .15s;
+  position:relative;overflow:hidden;
+}
+button:active{transform:scale(.96)}
+button .sub{font-size:9px;letter-spacing:.2em;color:var(--ink-dim);display:block;margin-top:2px}
+button:disabled{opacity:.35;cursor:not-allowed}
+
+/* accent variants */
+.btn-neon{border-color:rgba(180,77,255,.35);color:var(--neon)}
+.btn-neon:active{background:var(--neon-dim);box-shadow:0 0 18px rgba(180,77,255,.25)}
+.btn-blue{border-color:rgba(87,184,255,.4);color:var(--blue)}
+.btn-blue:active{background:var(--blue-dim);box-shadow:0 0 18px rgba(87,184,255,.25)}
+.btn-red{border-color:rgba(255,90,90,.4);color:var(--red)}
+.btn-red:active{background:var(--red-dim);box-shadow:0 0 18px rgba(255,90,90,.3)}
+.btn-blue{border-color:rgba(87,184,255,.35);color:var(--blue)}
+.btn-blue:active{background:rgba(87,184,255,.12)}
+
+#btn-connect{width:110px;height:44px;min-height:44px;font-size:12px;border-radius:10px}
+#btn-connect.on{color:var(--red);border-color:rgba(255,90,90,.4)}
+
+/* ============ MAIN GRID ============ */
+main{
+  display:grid;
+  grid-template-columns:1fr 1.15fr .85fr;
+  gap:10px;
+  min-height:0;
+}
+@media (max-width:900px){
+  main{grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr}
+  #col-left{grid-column:1/-1}
+}
+@media (max-width:620px){
+  main{grid-template-columns:1fr;overflow-y:auto}
+  body{overflow:auto}
+  #app{height:auto;min-height:100dvh}
+  .beam-line{width:10px}
+}
+
+.col{
+  display:flex;flex-direction:column;gap:10px;min-height:0;
+  background:linear-gradient(180deg, rgba(13,16,26,.42), rgba(9,11,18,.42));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px;
+  backdrop-filter:blur(10px);
+}
+.panel-label{
+  font-size:10px;letter-spacing:.38em;text-transform:uppercase;
+  color:var(--ink-dim);
+  display:flex;align-items:center;gap:10px;
+}
+.panel-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ============ DRO (coordinates) ============ */
+#dro{display:flex;flex-direction:column;gap:10px;flex:1;justify-content:center}
+.axis-row{
+  display:grid;
+  grid-template-columns:56px 1fr auto;
+  align-items:center;gap:12px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px 16px;
+  transition:border-color .3s, box-shadow .3s;
+}
+.axis-row.offzero{border-color:rgba(87,184,255,.35);box-shadow:inset 0 0 22px rgba(87,184,255,.05)}
+.axis-letter{
+  font-family:var(--serif);
+  font-size:30px;font-weight:600;
+  color:var(--ink-dim);
+  text-align:center;
+  border-right:1px solid var(--line);
+  padding-right:12px;
+}
+.axis-row.offzero .axis-letter{color:var(--blue)}
+.axis-val{
+  font-size:clamp(28px,3.6vw,42px);
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+  color:var(--ink);
+  line-height:1;
+}
+.axis-unit{font-size:11px;color:var(--ink-faint);letter-spacing:.2em}
+.zero-btn{
+  min-height:44px;min-width:64px;height:44px;
+  font-size:11px;border-radius:10px;
+  color:var(--ink-dim);
+}
+.zero-btn:active{color:var(--neon);border-color:rgba(180,77,255,.4)}
+
+.meta-row{
+  display:flex;gap:8px;flex-wrap:wrap;
+  font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);
+}
+.meta-chip{
+  border:1px solid var(--line);border-radius:8px;
+  padding:6px 10px;background:var(--panel);
+  display:flex;gap:6px;align-items:center;
+}
+.meta-chip b{color:var(--ink);font-weight:500}
+.meta-chip.alarm-on{border-color:rgba(255,90,90,.5);color:var(--red)}
+.meta-chip.alarm-on b{color:var(--red)}
+
+/* macro buttons under DRO */
+.macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.macro-grid button{min-height:56px;font-size:12px}
+
+/* ============ JOG PAD ============ */
+#jog-layout{
+  flex:1;display:grid;min-height:0;
+  grid-template-columns:1fr auto;
+  gap:12px;align-items:stretch;
+}
+.xy-pad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  gap:8px;
+  min-height:0;
+}
+.jog-btn{
+  font-size:26px;
+  border-radius:14px;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  color:var(--neon);
+  border-color:rgba(180,77,255,.22);
+  text-shadow:0 0 12px rgba(180,77,255,.35);
+  flex-direction:column;
+}
+.jog-btn:active{background:var(--neon-dim)}
+.jog-btn.diag{color:var(--ink-dim);font-size:20px;text-shadow:none}
+.jog-btn.diag:active{color:var(--neon)}
+.jog-center{
+  background:var(--panel2);
+  border:1px dashed var(--line2);
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink-faint);font-size:18px;letter-spacing:.3em;
+}
+
+.z-col{
+  display:grid;grid-template-rows:1fr auto 1fr;
+  gap:8px;width:96px;
+}
+.z-btn{font-size:24px;color:var(--blue);border-color:rgba(87,184,255,.25);flex-direction:column}
+.z-btn:active{background:rgba(87,184,255,.12)}
+.z-label{
+  text-align:center;font-size:9px;letter-spacing:.4em;color:var(--ink-dim);
+  text-transform:uppercase;align-self:center;
+}
+
+/* ============ SELECTORS ============ */
+.sel-block{display:flex;flex-direction:column;gap:8px}
+.seg{
+  display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;
+}
+.seg button{
+  min-height:52px;font-size:13px;border-radius:10px;
+  color:var(--ink-dim);letter-spacing:.08em;
+}
+.seg button.sel{
+  color:var(--neon);
+  border-color:rgba(180,77,255,.55);
+  background:var(--neon-dim);
+  box-shadow:0 0 14px rgba(180,77,255,.14), inset 0 0 10px rgba(180,77,255,.06);
+}
+.seg.speed button.sel{color:var(--blue);border-color:rgba(87,184,255,.5);background:var(--blue-dim);box-shadow:0 0 14px rgba(87,184,255,.12)}
+
+/* ============ FOOTER ============ */
+footer{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;align-items:stretch;
+}
+.action-row{
+  display:grid;grid-auto-flow:column;grid-auto-columns:minmax(104px,1fr);gap:8px;
+}
+.action-row button{flex-direction:column;font-size:12px;min-height:64px;padding:6px 10px}
+.action-row button .ico{font-size:18px;line-height:1}
+
+#console{
+  min-width:0;
+  background:rgba(7,8,14,.55);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px 12px;
+  font-size:11px;line-height:1.55;
+  overflow-y:auto;
+  height:64px;
+  color:var(--ink-dim);
+  scrollbar-width:thin;
+}
+#console .me{color:var(--neon)}
+#console .err{color:var(--red)}
+#console .info{color:var(--ink-dim)}
+
+@media (max-width:900px){
+  footer{grid-template-columns:1fr}
+  #console{height:52px}
+}
+</style>
+</head>
+<body>
+
+<div id="tube-bg" aria-hidden="true"></div>
+<canvas id="fx-bg" aria-hidden="true"></canvas>
+
+<div id="app">
+
+  <!-- ======= HEADER ======= -->
+  <header>
+    <div class="title-scene" aria-label="TeXmExDeX">
+      <span class="beam-line"></span>
+      <span class="beam-dot"></span>
+      <div class="neon" id="neon"></div>
+      <span class="beam-tail"></span>
+    </div>
+    <div class="conn">
+      <div class="state-pill" id="state-pill"><span class="dot"></span><span id="state-text">Offline</span></div>
+      <div class="host-wrap">
+        <input id="host" type="text" inputmode="decimal" placeholder="172.16.0.12" spellcheck="false">
+        <button id="btn-connect" class="btn-neon">Network</button>
+        <button id="btn-usb" class="btn-blue" style="width:90px;height:44px;min-height:44px;font-size:12px;border-radius:10px">USB</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======= MAIN ======= -->
+  <main>
+
+    <!-- LEFT: DRO + macros -->
+    <section class="col" id="col-left">
+      <div class="panel-label">Position &middot; Work Coordinates</div>
+      <div id="dro">
+        <div class="axis-row" id="row-x">
+          <div class="axis-letter">X</div>
+          <div><span class="axis-val" id="rx">0.00</span> <span class="axis-unit">mm</span></div>
+          <button class="zero-btn" id="zero-x">X&empty;</button>
+        </div>
+        <div class="axis-row" id="row-y">
+          <div class="axis-letter">Y</div>
+          <div><span class="axis-val" id="ry">0.00</span> <span class="axis-unit">mm</span></div>
+          <button class="zero-btn" id="zero-y">Y&empty;</button>
+        </div>
+        <div class="axis-row" id="row-z">
+          <div class="axis-letter">Z</div>
+          <div><span class="axis-val" id="rz">0.00</span> <span class="axis-unit">mm</span></div>
+          <button class="zero-btn" id="zero-z">Z&empty;</button>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-chip">BUF <b id="st-buf">&mdash;</b></div>
+        <div class="meta-chip">FEED <b id="st-feed">&mdash;</b></div>
+        <div class="meta-chip" id="chip-alarm">ALARM <b id="st-alarm">&mdash;</b></div>
+      </div>
+      <div class="macro-grid">
+        <button id="btn-home" class="btn-neon">Home All<span class="sub">$H</span></button>
+        <button id="btn-unlock" class="btn-blue">Unlock<span class="sub">$X</span></button>
+      </div>
+    </section>
+
+    <!-- CENTER: jog pad + selectors -->
+    <section class="col">
+      <div class="panel-label">Jog</div>
+      <div id="jog-layout">
+        <div class="xy-pad">
+          <button class="jog-btn diag" data-x="-1" data-y="1">&#8598;</button>
+          <button class="jog-btn" data-x="0"  data-y="1">&#8593;</button>
+          <button class="jog-btn diag" data-x="1"  data-y="1">&#8599;</button>
+          <button class="jog-btn" data-x="-1" data-y="0">&#8592;</button>
+          <div class="jog-center" id="jog-center">&middot;</div>
+          <button class="jog-btn" data-x="1"  data-y="0">&#8594;</button>
+          <button class="jog-btn diag" data-x="-1" data-y="-1">&#8601;</button>
+          <button class="jog-btn" data-x="0"  data-y="-1">&#8595;</button>
+          <button class="jog-btn diag" data-x="1"  data-y="-1">&#8600;</button>
+        </div>
+        <div class="z-col">
+          <button class="z-btn" id="z-up">&#8679;<span class="sub">Z+</span></button>
+          <div class="z-label">Z</div>
+          <button class="z-btn" id="z-dn">&#8681;<span class="sub">Z&minus;</span></button>
+        </div>
+      </div>
+      <div class="sel-block">
+        <div class="panel-label">Step</div>
+        <div class="seg" id="seg-step">
+          <button data-step="0.1">0.1</button>
+          <button data-step="1" class="sel">1.0</button>
+          <button data-step="5">5</button>
+          <button data-step="10">10</button>
+          <button data-step="50">50</button>
+        </div>
+      </div>
+      <div class="sel-block">
+        <div class="panel-label">Feed &middot; mm/min</div>
+        <div class="seg speed" id="seg-feed">
+          <button data-feed="300">300</button>
+          <button data-feed="600" class="sel">600</button>
+          <button data-feed="1200">1200</button>
+          <button data-feed="2500">2500</button>
+          <button data-feed="5000">5000</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: system actions -->
+    <section class="col" id="col-right">
+      <div class="panel-label">Cycle Control</div>
+      <div class="macro-grid" style="grid-template-columns:1fr;flex:0">
+        <button id="btn-hold" class="btn-blue" style="min-height:76px">Feed Hold<span class="sub">! pause motion</span></button>
+        <button id="btn-resume" class="btn-neon" style="min-height:76px">Cycle Start<span class="sub">~ resume</span></button>
+      </div>
+      <div class="panel-label" style="margin-top:6px">Work Origin</div>
+      <div class="macro-grid" style="grid-template-columns:1fr 1fr">
+        <button id="zero-xy" class="btn-blue">Zero XY</button>
+        <button id="btn-goto0" class="btn-blue">Go To 0<span class="sub">XY rapid</span></button>
+        <button id="btn-frame" class="btn-blue">Frame<span class="sub">trace job</span></button>
+      </div>
+      <div class="panel-label" style="margin-top:6px">Machine</div>
+      <div class="macro-grid" style="grid-template-columns:1fr 1fr">
+        <button id="btn-soft-home" class="btn-blue">Soft Home<span class="sub">G28</span></button>
+        <button id="btn-reset" class="btn-red">Reset<span class="sub">ctrl-x</span></button>
+      </div>
+      <div class="panel-label" style="margin-top:6px">Job File</div>
+      <input id="job-file" type="file" accept=".gbl,.gcode,.gc,.nc,.tap,.txt" style="display:none">
+      <div class="macro-grid" style="grid-template-columns:1fr 1fr">
+        <button id="btn-file-open" class="btn-blue">Open GBL<span class="sub">local file</span></button>
+        <button id="btn-file-run" class="btn-neon" disabled>Run File<span class="sub">stream on OK</span></button>
+        <button id="btn-file-stop" class="btn-red" disabled>Stop File<span class="sub">reset + M5</span></button>
+      </div>
+      <div class="meta-row"><div class="meta-chip" style="max-width:100%;overflow:hidden">JOB <b id="job-status" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">no file</b></div></div>
+      <div style="flex:1"></div>
+      <div class="meta-row" style="justify-content:space-between">
+        <div class="meta-chip">FW <b>FluidNC 4.0.3</b></div>
+        <div class="meta-chip">LINK <b id="ws-state">closed</b></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======= FOOTER ======= -->
+  <footer>
+    <div class="action-row">
+      <button id="ft-home" class="btn-neon"><span class="ico">&#8962;</span>Home</button>
+      <button id="ft-unlock" class="btn-blue"><span class="ico">&#128275;</span>Unlock</button>
+      <button id="ft-zero" class="btn-blue"><span class="ico">&empty;</span>Zero</button>
+      <button id="ft-hold" class="btn-blue"><span class="ico">&#10074;&#10074;</span>Pause</button>
+      <button id="ft-resume" class="btn-neon"><span class="ico">&#9654;</span>Resume</button>
+    </div>
+    <div id="console" aria-live="polite"></div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   FluidNC 4.0.3 pendant — single-file build
+   Protocol: WebSocket on port HTTP+1 (default 81), plain-text lines.
+   Edit these constants for your machine:
+================================================================ */
+var WS_PORT  = 81;
+var BED_W    = 400;     // mm - bed X size (frame button)
+var BED_H    = 400;     // mm - bed Y size
+var FRAME_W  = 100;     // mm - frame rectangle width
+var FRAME_H  = 100;     // mm - frame rectangle height
+var Z_MAXSTEP= 1;       // mm - temporary Z jog cap during diagnosis
+var POLL_MS  = 250;     // status '?' poll interval
+
+/* ---------------- state ---------------- */
+var ws = null, serialPort = null, serialReader = null, serialWriter = null;
+var connected = false, transport = "", pollTimer = null, pageId = "";
+var feed = 1000, step = 5.0;
+var lastPos = {x:0, y:0, z:0};
+var lastState = "";
+var serialRx = "";
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
+var job = {name:"", lines:[], index:0, running:false, awaiting:false};
+
+function $(id){ return document.getElementById(id); }
+
+/* ---------------- console log ---------------- */
+var logEl = null;
+function log(msg, cls){
+  if(!logEl) logEl = $("console");
+  var d = document.createElement("div");
+  d.className = cls || "info";
+  d.textContent = msg;
+  logEl.appendChild(d);
+  while(logEl.children.length > 80) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ================================================================
+   ANIMATED TITLE — dense char-wall canvas.
+   Each letterform is a 5x7 wall of tiny characters (~17-25 cells).
+   Every cell is a "spinning block": it flips through random glyph
+   faces while squash-scaling vertically, then lands on its final
+   character. Words cycle TeXmExDeX -> LASER -> FLUIDNC, glitching.
+================================================================ */
+var TITLE = (function(){
+  var WORD = "TeXmExDeX";
+  function build(){
+    var host = document.getElementById("neon");
+    if(!host) return;
+    for(var i=0; i<WORD.length; i++){
+      var s = document.createElement("span");
+      s.className = "nl";
+      s.textContent = WORD[i];
+      /* assign flicker classes to a few letters, staggered */
+      if(i === 1) s.classList.add("flicker");
+      if(i === 4) s.classList.add("flicker2");
+      if(i === 7) s.classList.add("flicker3");
+      host.appendChild(s);
+    }
+    /* occasional random "dead" letter dropout, restores itself */
+    if(!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)){
+      setInterval(function(){
+        if(Math.random() > 0.35) return;
+        var letters = host.querySelectorAll(".nl");
+        var pick = letters[Math.floor(Math.random() * letters.length)];
+        if(pick.classList.contains("dead")) return;
+        pick.classList.add("dead");
+        setTimeout(function(){ pick.classList.remove("dead"); }, 180 + Math.random()*420);
+      }, 5200);
+    }
+  }
+  return { build: build };
+})();
+
+/* ================================================================
+   ASCII BACKGROUND — drifting plasma glyph-field with a wandering
+   "toolhead" cursor. Canvas-based, bucketed alpha fills for speed.
+================================================================ */
+
+
+
+/* ================================================================
+   ANIMATED FX BACKGROUND — dual plasma field.
+   Neon-red glyphs drift on one sine-interference field, blue on a
+   phase-shifted second field. Renders above the tube photo, below UI.
+================================================================ */
+var FX = (function(){
+  var cv, ctx, W=0, H=0, cols=0, rows=0;
+  var CW = 9, CH = 16;
+  var CHARS = " \u00B7:-~=+*#%@";
+  var ALPHAS = [0.06, 0.11, 0.18, 0.28, 0.42, 0.60];
+  var NEON = "180,77,255", BLUE = "87,184,255";
+  var last = 0, running = true;
+
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W; cv.height = H;
+    cols = Math.ceil(W / CW) + 1;
+    rows = Math.ceil(H / CH) + 1;
+    ctx.font = "13px Consolas, monospace";
+    ctx.textBaseline = "top";
+  }
+
+  function frame(tms){
+    var t = tms / 1000;
+    /* two wandering "heads" */
+    var hx1 = cols*0.5 + Math.cos(t*0.29)*cols*0.32;
+    var hy1 = rows*0.5 + Math.sin(t*0.41)*rows*0.30;
+    var hx2 = cols*0.5 + Math.cos(t*0.37 + 3.1)*cols*0.28;
+    var hy2 = rows*0.5 + Math.sin(t*0.23 + 1.7)*rows*0.33;
+    var bN = [[],[],[],[],[],[]], bB = [[],[],[],[],[],[]];
+    for(var y=0; y<rows; y++){
+      for(var x=0; x<cols; x++){
+        /* field 1 (neon) */
+        var v = Math.sin(x*0.28 + t*0.8) + Math.sin(y*0.24 - t*0.55) + Math.sin((x+y)*0.15 + t*0.4);
+        var dx = x-hx1, dy = y-hy1;
+        v += Math.sin(Math.sqrt(dx*dx+dy*dy)*0.5 - t*1.2) * 1.2;
+        var n = (v + 4.2) / 8.4 + Math.exp(-(dx*dx+dy*dy)/30) * 0.45;
+        if(n > 0.10){
+          if(n > 1) n = 1;
+          var ci = Math.floor(n * (CHARS.length-1));
+          if(ci >= 1){
+            var b = Math.floor(n * 5.5); if(b > 5) b = 5;
+            bN[b].push(x, y, ci);
+          }
+        }
+        /* field 2 (blue), phase-shifted */
+        var v2 = Math.sin(x*0.22 - t*0.6 + 2.0) + Math.sin(y*0.31 + t*0.7 + 1.0) + Math.sin((x-y)*0.18 + t*0.5);
+        dx = x-hx2; dy = y-hy2;
+        v2 += Math.sin(Math.sqrt(dx*dx+dy*dy)*0.45 - t*1.05) * 1.1;
+        var n2 = (v2 + 4.2) / 8.4 + Math.exp(-(dx*dx+dy*dy)/34) * 0.4;
+        if(n2 > 0.12){
+          if(n2 > 1) n2 = 1;
+          var ci2 = Math.floor(n2 * (CHARS.length-1));
+          if(ci2 >= 1){
+            var b2 = Math.floor(n2 * 5.5); if(b2 > 5) b2 = 5;
+            bB[b2].push(x, y, ci2);
+          }
+        }
+      }
+    }
+    ctx.clearRect(0, 0, W, H);
+    var b, arr, i;
+    for(b=0; b<6; b++){
+      arr = bN[b];
+      if(arr.length){
+        ctx.fillStyle = "rgba(" + NEON + "," + ALPHAS[b] + ")";
+        for(i=0; i<arr.length; i+=3) ctx.fillText(CHARS[arr[i+2]], arr[i]*CW, arr[i+1]*CH);
+      }
+      arr = bB[b];
+      if(arr.length){
+        ctx.fillStyle = "rgba(" + BLUE + "," + ALPHAS[b] + ")";
+        for(i=0; i<arr.length; i+=3) ctx.fillText(CHARS[arr[i+2]], arr[i]*CW, arr[i+1]*CH);
+      }
+    }
+    /* heads */
+    ctx.fillStyle = "rgba(" + NEON + ",0.85)";
+    ctx.fillText("@", Math.round(hx1)*CW, Math.round(hy1)*CH);
+    ctx.fillStyle = "rgba(" + BLUE + ",0.8)";
+    ctx.fillText("@", Math.round(hx2)*CW, Math.round(hy2)*CH);
+  }
+
+  function loop(tms){
+    if(!running) return;
+    if(tms - last > 44){ last = tms; frame(tms); }
+    requestAnimationFrame(loop);
+  }
+
+  function init(){
+    cv = document.getElementById("fx-bg");
+    if(!cv) return;
+    ctx = cv.getContext("2d");
+    resize();
+    window.addEventListener("resize", resize);
+    if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches){
+      frame(4000); running = false; return;
+    }
+    requestAnimationFrame(loop);
+  }
+  return { init: init };
+})();
+
+/* ================================================================
+   CONNECTION — Wi-Fi WebSocket or USB Web Serial at 115200 baud.
+================================================================ */
+function setPill(state){
+  var pill = $("state-pill"), txt = $("state-text");
+  var s = (state || "offline").toLowerCase();
+  var cls = "state-pill";
+  if(s.indexOf("idle") === 0) cls += " idle";
+  else if(s.indexOf("run") === 0 || s.indexOf("jog") === 0) cls += " run";
+  else if(s.indexOf("hold") === 0) cls += " hold";
+  else if(s.indexOf("alarm") === 0 || s.indexOf("door") === 0) cls += " alarm";
+  pill.className = cls;
+  txt.textContent = state || "Offline";
+  lastState = s;
+}
+
+function controllerHost(){
+  return $("host").value.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
+}
+function transportReady(){
+  if(!connected) return false;
+  if(transport === "network") return !!pageId && ws && ws.readyState === WebSocket.OPEN;
+  if(transport === "usb") return !!serialWriter;
+  return false;
+}
+function requestCommand(c, quiet){
+  if(!transportReady()){
+    if(!quiet) log("controller connection is not ready", "err");
+    return;
+  }
+  if(!quiet) log("> " + c, "me");
+  if(transport === "network") ws.send(c + "\n");
+  else serialWriter.write(textEncoder.encode(c + "\n")).catch(function(e){ log("USB write failed: " + e.message, "err"); });
+}
+function sendRealtime(c, label){
+  if(!transportReady()){ log("controller connection is not ready", "err"); return; }
+  log("> " + (label || c), "me");
+  if(transport === "network") ws.send(c);
+  else serialWriter.write(textEncoder.encode(c)).catch(function(e){ log("USB write failed: " + e.message, "err"); });
+}
+function send(c){ requestCommand(c, false); }
+function startPoll(){
+  stopPoll();
+  function poll(){
+    if(!transportReady()) return;
+    if(transport === "network") ws.send("?");
+    else serialWriter.write(textEncoder.encode("?")).catch(function(){});
+  }
+  poll();
+  pollTimer = setInterval(poll, POLL_MS);
+}
+function stopPoll(){ if(pollTimer){ clearInterval(pollTimer); pollTimer = null; } }
+function routeSocketMessage(message){
+  var text = String(message || "");
+  var trimmed = text.trim();
+  var match = trimmed.match(/^(?:CURRENT_ID|currentID):(\d+)$/i);
+  if(match){
+    pageId = match[1];
+    connected = true;
+    setPill("Connected");
+    log("network session " + pageId + " ready");
+    startPoll();
+    updateJobUi();
+    return;
+  }
+  if(/^PING/i.test(trimmed)) return;
+  routeSerialChunk(text);
+}
+function routeSerialChunk(chunk){
+  serialRx += String(chunk || "").replace(/\r/g, "");
+  var lines = serialRx.split("\n");
+  serialRx = lines.pop();
+  for(var i=0; i<lines.length; i++) handleMsg(lines[i]);
+}
+function resetConnectionUi(){
+  connected = false; transport = ""; pageId = ""; stopPoll();
+  $("ws-state").textContent = "closed";
+  var net = $("btn-connect"); net.textContent = "Network"; net.className = "btn-neon";
+  var usb = $("btn-usb"); usb.textContent = "USB"; usb.className = "btn-blue";
+  setPill("Offline");
+  if(job.running) stopJobLocal("connection lost");
+  updateJobUi();
+}
+function connect(){
+  if(connected){ log("disconnect the current link first", "err"); return; }
+  var host = controllerHost();
+  if(!host){ log("enter the FluidNC IP first", "err"); return; }
+  $("host").value = host;
+  transport = "network";
+  var url = "ws://" + host + "/";
+  try {
+    ws = new WebSocket(url, ["arduino"]);
+    ws.binaryType = "arraybuffer";
+  } catch(e){ transport=""; log("bad host: " + e.message, "err"); return; }
+  log("linking " + url + " ...");
+  $("ws-state").textContent = "opening";
+  ws.onopen = function(){
+    $("ws-state").textContent = "network";
+    var b = $("btn-connect"); b.textContent = "Unlink"; b.className = "on";
+    log("socket open — waiting for FluidNC session ID");
+  };
+  ws.onmessage = function(ev){
+    if(ev.data instanceof ArrayBuffer) routeSocketMessage(textDecoder.decode(ev.data));
+    else if(ev.data instanceof Blob) ev.data.text().then(routeSocketMessage);
+    else routeSocketMessage(String(ev.data));
+  };
+  ws.onerror = function(){ log("network socket error", "err"); };
+  ws.onclose = function(){
+    if(transport === "network"){
+      ws = null; resetConnectionUi(); log("network link closed");
+    }
+  };
+}
+
+var usbClosing = false;
+async function serialReadLoop(){
+  try {
+    while(serialPort && serialPort.readable){
+      serialReader = serialPort.readable.getReader();
+      try {
+        while(true){
+          var result = await serialReader.read();
+          if(result.done) break;
+          if(result.value) routeSerialChunk(textDecoder.decode(result.value, {stream:true}));
+        }
+      } finally {
+        serialReader.releaseLock();
+        serialReader = null;
+      }
+      break;
+    }
+  } catch(e){
+    if(!usbClosing) log("USB read failed: " + e.message, "err");
+  }
+  if(!usbClosing && transport === "usb") resetConnectionUi();
+}
+async function connectUsb(){
+  if(connected){ log("disconnect the current link first", "err"); return; }
+  if(!navigator.serial){ log("USB mode requires Chrome or Edge at http://localhost", "err"); return; }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({baudRate:115200, bufferSize:16384});
+    serialWriter = serialPort.writable.getWriter();
+    serialRx = ""; pageId = "usb"; transport = "usb"; connected = true;
+    $("ws-state").textContent = "USB";
+    var b = $("btn-usb"); b.textContent = "Unplug"; b.className = "on";
+    setPill("Connected");
+    log("USB serial connected at 115200 baud");
+    serialReadLoop();
+    startPoll();
+    updateJobUi();
+  } catch(e){
+    serialPort = null; serialWriter = null; resetConnectionUi();
+    log("USB connection failed: " + e.message, "err");
+  }
+}
+async function disconnectUsb(){
+  usbClosing = true; stopPoll();
+  try {
+    if(serialReader) await serialReader.cancel();
+    if(serialWriter){ serialWriter.releaseLock(); serialWriter = null; }
+    if(serialPort){ await serialPort.close(); serialPort = null; }
+  } catch(e){ log("USB disconnect: " + e.message, "err"); }
+  usbClosing = false;
+  resetConnectionUi();
+  log("USB link closed");
+}
+
+/* ================================================================
+   STATUS PARSER — accepts native <Idle|...> FluidNC reports.
+================================================================ */
+function handleMsg(message){
+  String(message || "").split(/[\r\n]+/).forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+    if(line.charAt(0) !== "<"){
+      if(line === "ok") jobAck();
+      else if(/^error|^ALARM/i.test(line)){
+        log(line, "err");
+        if(job.running) stopJobLocal("stopped: " + line);
+      } else if(!/^PING/i.test(line)) log(line, "info");
+      return;
+    }
+    var parts = line.replace(/[<>]/g, "").split("|");
+    var state = parts[0].split(":")[0];
+    var pos = null, bf = null, fd = null, al = null;
+    for(var i=1; i<parts.length; i++){
+      if(/^WPos:|^MPos:/.test(parts[i])) pos = parts[i].slice(parts[i].indexOf(":") + 1);
+      else if(parts[i].indexOf("Bf:") === 0) bf = parts[i].slice(3);
+      else if(parts[i].indexOf("FS:") === 0) fd = parts[i].slice(3);
+      else if(parts[i].indexOf("F:") === 0) fd = parts[i].slice(2);
+      else if(parts[i].indexOf("A:") === 0) al = parts[i].slice(2);
+    }
+    if(pos){
+      var p = pos.split(","), x = parseFloat(p[0]), y = parseFloat(p[1]), z = parseFloat(p[2]);
+      if(!isNaN(x)){ lastPos.x=x; $("rx").textContent=x.toFixed(2); $("row-x").className="axis-row"+(Math.abs(x)>.005?" offzero":""); }
+      if(!isNaN(y)){ lastPos.y=y; $("ry").textContent=y.toFixed(2); $("row-y").className="axis-row"+(Math.abs(y)>.005?" offzero":""); }
+      if(!isNaN(z)){ lastPos.z=z; $("rz").textContent=z.toFixed(2); $("row-z").className="axis-row"+(Math.abs(z)>.005?" offzero":""); }
+    }
+    if(bf) $("st-buf").textContent = bf.split(",")[0];
+    if(fd) $("st-feed").textContent = fd.split(",")[0];
+    var chip = $("chip-alarm");
+    if(al){ $("st-alarm").textContent=al; chip.className="meta-chip alarm-on"; }
+    else { $("st-alarm").textContent="—"; chip.className="meta-chip"; }
+    setPill(state);
+  });
+}
+
+/* ================================================================
+   LOCAL G-CODE FILE STREAMING — one line per FluidNC "ok".
+================================================================ */
+function updateJobUi(status){
+  var text = status || (job.name ? job.name + " · " + job.lines.length + " lines" : "no file");
+  $("job-status").textContent = text;
+  $("btn-file-run").disabled = !job.lines.length || job.running || !connected;
+  $("btn-file-stop").disabled = !job.running;
+}
+function stopJobLocal(reason){
+  job.running = false;
+  job.awaiting = false;
+  updateJobUi(reason || "stopped");
+}
+function jobAck(){
+  if(!job.running || !job.awaiting) return;
+  job.awaiting = false;
+  job.index++;
+  if(job.index >= job.lines.length){
+    job.running = false;
+    updateJobUi("complete · " + job.lines.length + " lines");
+    requestCommand("M5", true);
+    log("job complete — M5 sent", "info");
+    return;
+  }
+  updateJobUi(job.name + " · " + job.index + "/" + job.lines.length);
+  setTimeout(jobSendNext, 0);
+}
+function jobSendNext(){
+  if(!job.running || job.awaiting || job.index >= job.lines.length) return;
+  job.awaiting = true;
+  requestCommand(job.lines[job.index], false);
+}
+function startJob(){
+  if(!transportReady()){ log("connect to FluidNC before running a file", "err"); return; }
+  if(lastState.indexOf("idle") !== 0){ log("file blocked while controller is " + (lastState || "not reporting"), "err"); return; }
+  if(!job.lines.length){ log("open a G-code file first", "err"); return; }
+  job.index = 0;
+  job.running = true;
+  job.awaiting = false;
+  updateJobUi(job.name + " · 0/" + job.lines.length);
+  log("running " + job.name + " (" + job.lines.length + " lines)");
+  jobSendNext();
+}
+function abortJob(){
+  if(!job.running) return;
+  stopJobLocal("aborted");
+  sendRealtime("\x18", "[job abort/reset]");
+  setTimeout(function(){ requestCommand("M5", true); }, 250);
+}
+function loadJobFile(file){
+  if(!file) return;
+  file.text().then(function(text){
+    var lines = text.replace(/\r/g, "").split("\n").map(function(line){ return line.trim(); }).filter(function(line){
+      return line && line !== "%";
+    });
+    if(!lines.length){ log("selected file contains no G-code", "err"); return; }
+    job.name = file.name;
+    job.lines = lines;
+    job.index = 0;
+    job.running = false;
+    job.awaiting = false;
+    updateJobUi();
+    log("loaded " + file.name + " — " + lines.length + " lines");
+  }).catch(function(e){ log("file read failed: " + e.message, "err"); });
+}
+
+/* ================================================================
+   MOTION — every click sends exactly one finite incremental jog.
+================================================================ */
+function mayJog(){
+  if(job.running){ log("jog blocked while a file is running", "err"); return false; }
+  if(lastState.indexOf("idle") === 0) return true;
+  log("jog blocked while controller is " + (lastState || "not reporting"), "err");
+  return false;
+}
+function jogXY(dx, dy){
+  if(!mayJog()) return;
+  var c = "$J=G91 G21 F" + feed;
+  if(dx) c += " X" + (dx * step).toFixed(3);
+  if(dy) c += " Y" + (dy * step).toFixed(3);
+  send(c);
+}
+function jogZ(dz){
+  if(!mayJog()) return;
+  var zs = Math.min(step, Z_MAXSTEP);
+  send("$J=G91 G21 F30 Z" + (dz * zs).toFixed(3));
+}
+function jogCancel(){ sendRealtime("\x85", "[jog-cancel]"); }
+function bindSingleJog(el, fn){
+  el.addEventListener("click", function(ev){ ev.preventDefault(); fn(); });
+  el.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
+}
+
+/* ================================================================
+   WIRING
+================================================================ */
+function segSelect(segId, attr, cb){
+  var seg = $(segId);
+  seg.addEventListener("click", function(ev){
+    var b = ev.target.closest("button");
+    if(!b) return;
+    var all = seg.querySelectorAll("button");
+    for(var i=0; i<all.length; i++) all[i].className = "";
+    b.className = "sel";
+    cb(parseFloat(b.getAttribute(attr)));
+  });
+}
+function selectValue(segId, attr, value){
+  var buttons = $(segId).querySelectorAll("button");
+  for(var i=0; i<buttons.length; i++) buttons[i].className = Number(buttons[i].getAttribute(attr)) === value ? "sel" : "";
+}
+function configureBringupUi(){
+  step = 5;
+  feed = 1000;
+  selectValue("seg-step", "data-step", step);
+  var buttons = $("seg-feed").querySelectorAll("button");
+  var values = [500, 1000, 2500, 5000, 10000];
+  for(var i=0; i<buttons.length; i++){
+    buttons[i].setAttribute("data-feed", values[i]);
+    buttons[i].textContent = values[i];
+    buttons[i].className = values[i] === feed ? "sel" : "";
+  }
+  ["btn-goto0","btn-soft-home"].forEach(function(id){
+    $(id).disabled = true;
+    $(id).title = "Disabled during motion bring-up";
+  });
+  $("btn-home").disabled = false;
+  $("btn-home").innerHTML = "Home XY<span class='sub'>$H · Z excluded</span>";
+  $("ft-home").disabled = false;
+  $("ft-home").innerHTML = "<span class='ico'>&#8962;</span>Home XY";
+  var pulse = $("btn-frame");
+  pulse.disabled = false;
+  pulse.className = "btn-red";
+  pulse.innerHTML = "Test Pulse<span class='sub'>30% · 1.0 sec</span>";
+  pulse.title = "Queue M3 S300, a 1 second dwell, and M5";
+  pulse.addEventListener("click", function(){
+    if(lastState.indexOf("idle") !== 0){
+      log("test pulse blocked while controller is " + (lastState || "not reporting"), "err");
+      return;
+    }
+    send("M3 S300\nG4 P1.0\nM5");
+  });
+}
+
+function init(){
+  TITLE.build();
+  FX.init();
+  logEl = $("console");
+  configureBringupUi();
+  log("finite-jog pendant ready — default step 5 mm, XY feed 1000 mm/min, Z feed 30 mm/min");
+
+  if(location.protocol === "http:" && location.host && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") $("host").value = location.host;
+  else $("host").value = "172.16.0.12";
+
+  updateJobUi();
+  $("btn-connect").addEventListener("click", function(){
+    if(connected && transport === "network") ws.close();
+    else connect();
+  });
+  $("btn-usb").addEventListener("click", function(){
+    if(connected && transport === "usb") disconnectUsb();
+    else connectUsb();
+  });
+  if(!navigator.serial){
+    $("btn-usb").disabled = true;
+    $("btn-usb").title = "Open with Chrome or Edge from http://localhost:8000";
+  }
+  $("btn-file-open").addEventListener("click", function(){ $("job-file").click(); });
+  $("job-file").addEventListener("change", function(ev){ loadJobFile(ev.target.files[0]); });
+  $("btn-file-run").addEventListener("click", startJob);
+  $("btn-file-stop").addEventListener("click", abortJob);
+
+  var btns = document.querySelectorAll(".jog-btn");
+  for(var i=0; i<btns.length; i++){
+    (function(b){
+      var dx = parseInt(b.getAttribute("data-x"), 10);
+      var dy = parseInt(b.getAttribute("data-y"), 10);
+      bindSingleJog(b, function(){ jogXY(dx, dy); });
+    })(btns[i]);
+  }
+  $("jog-center").addEventListener("click", jogCancel);
+  bindSingleJog($("z-up"), function(){ jogZ(1); });
+  bindSingleJog($("z-dn"), function(){ jogZ(-1); });
+
+  segSelect("seg-step", "data-step", function(v){ step=v; log("step = "+v+" mm"); });
+  segSelect("seg-feed", "data-feed", function(v){ feed=v; log("XY feed = "+v+" mm/min"); });
+
+  function on(id, fn){ $(id).addEventListener("click", fn); }
+  var homeXY = function(){ send("$H"); };
+  var unlock = function(){ send("$X"); };
+  var hold = function(){ sendRealtime("!", "[feed-hold]"); };
+  var resume = function(){ sendRealtime("~", "[cycle-start]"); };
+  var zeroXY = function(){ send("G10 L20 P1 X0 Y0"); };
+  on("btn-home", homeXY); on("ft-home", homeXY);
+  on("btn-unlock", unlock); on("ft-unlock", unlock);
+  on("btn-hold", hold); on("ft-hold", hold);
+  on("btn-resume", resume); on("ft-resume", resume);
+  on("zero-xy", zeroXY); on("ft-zero", zeroXY);
+  on("zero-x", function(){ send("G10 L20 P1 X0"); });
+  on("zero-y", function(){ send("G10 L20 P1 Y0"); });
+  on("zero-z", function(){ send("G10 L20 P1 Z0"); });
+  on("btn-reset", function(){ sendRealtime("\x18", "[soft-reset]"); });
+
+  document.addEventListener("keydown", function(ev){
+    if(ev.repeat || (ev.target && ev.target.tagName === "INPUT")) return;
+    var k=ev.key;
+    if(k === "ArrowUp") jogXY(0,1);
+    else if(k === "ArrowDown") jogXY(0,-1);
+    else if(k === "ArrowLeft") jogXY(-1,0);
+    else if(k === "ArrowRight") jogXY(1,0);
+    else if(k === "PageUp") jogZ(1);
+    else if(k === "PageDown") jogZ(-1);
+    else return;
+    ev.preventDefault();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
