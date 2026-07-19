@@ -1,9 +1,16 @@
 name: "Macrobase Agnes 1 Motion Bring-Up"
 board: "Macrobase ESP-WROOM-32 6-Axis CNC"
-# Active-low STEP preserves the DM442 common-anode inputs.
-# X/Y distance and direction are calibrated; Z remains manual-only.
-# X/Y top-right positive-end homing is enabled; Z has no limit or homing cycle.
-# Hard limits remain off until the first homing cycle is verified.
+# Active-low STEP preserves the DM442 common-anode inputs (do not change).
+# X/Y direction pins are ':low' (inverted). This is the CORRECT, verified
+#   FluidNC direction: +X moves right, +Y moves toward the top, and homing
+#   drives to the top-right switches.
+#   mpos_mm is set to max travel so the top-right home corner reads (400,300)
+#   and the work envelope is POSITIVE: 0 -> 400 (X), 0 -> 300 (Y). This
+#   matches LightBurn's positive workspace so jobs stay in bounds.
+# Do NOT change these to fix LightBurn — LightBurn direction is set by its
+#   own Origin (top-right) and Mirror (off) settings, not by this file.
+# Z remains manual-only: no limit pin and no homing cycle.
+# Hard/soft limits stay off until the first homing cycle is verified.
 i2so:
   bck_pin: gpio.22
   data_pin: gpio.21
@@ -25,14 +32,14 @@ axes:
       cycle: 1
       allow_single_axis: true
       positive_direction: true
-      mpos_mm: 0
+      mpos_mm: 400
       feed_mm_per_min: 200
       seek_mm_per_min: 3000
       settle_ms: 250
       seek_scaler: 1.1
       feed_scaler: 1.1
     motor0:
-      limit_pos_pin: gpio.33:low:pu
+      limit_pos_pin: gpio.32:low:pu
       hard_limits: false
       pulloff_mm: 3
       stepstick:
@@ -48,14 +55,14 @@ axes:
       cycle: 1
       allow_single_axis: true
       positive_direction: true
-      mpos_mm: 0
+      mpos_mm: 300
       feed_mm_per_min: 200
       seek_mm_per_min: 3000
       settle_ms: 250
       seek_scaler: 1.1
       feed_scaler: 1.1
     motor0:
-      limit_pos_pin: gpio.32:low:pu
+      limit_pos_pin: gpio.33:low:pu
       hard_limits: false
       pulloff_mm: 3
       stepstick:
@@ -73,15 +80,19 @@ axes:
 start:
   must_home: false
   check_limits: false
-PWM:
+# Laser spindle type enables FluidNC laser mode: it supports M4 dynamic
+#   power (power scales with speed for clean photo edges) and does NOT fire
+#   during G0 rapids. This is why $32 is read-only -- laser mode is set here
+#   by using the 'Laser:' type, not by the $32 command.
+# Same GPIO27 output, 5 kHz, and S0-S1000 map as before, so the firing
+#   threshold is unchanged. Both M3 (constant) and M4 (dynamic) now work.
+# To revert to plain constant-power behavior, rename 'Laser:' back to 'PWM:'.
+Laser:
   pwm_hz: 5000
-  direction_pin: NO_PIN
   output_pin: gpio.27
   enable_pin: NO_PIN
-  disable_with_s0: true
-  s0_with_disable: true
-  spinup_ms: 0
-  spindown_ms: 0
+  disable_with_s0: false
+  s0_with_disable: false
   tool_num: 0
   speed_map: 0=0.000% 1000=100.000%
   off_on_alarm: true
